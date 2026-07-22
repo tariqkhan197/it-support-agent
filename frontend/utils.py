@@ -13,7 +13,13 @@ from typing import Any
 import requests
 import streamlit as st
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://it-support-agent-cj6s.onrender.com/api/v1")
+# Streamlit Secrets, Environment Variable, aur Direct URL ka safe lookup
+API_BASE_URL = (
+    st.secrets.get("API_BASE_URL")
+    or st.secrets.get("BACKEND_URL")
+    or os.environ.get("API_BASE_URL")
+    or "https://it-support-agent-cj6s.onrender.com/api/v1"
+)
 _CSS_PATH = Path(__file__).parent / "assets" / "css" / "theme.css"
 
 STATUS_LABELS = {"open": "Open", "in_progress": "In Progress", "resolved": "Resolved", "closed": "Closed", "reopened": "Reopened"}
