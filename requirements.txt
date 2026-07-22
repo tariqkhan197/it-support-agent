@@ -17,8 +17,7 @@ groq==0.15.0
 # ===== Vector store & embeddings (RAG) =====
 chromadb==0.5.23
 sentence-transformers==3.3.1
-faiss-cpu==1.9.0.post1
-
+faiss-cpu
 # ===== Document processing =====
 pymupdf==1.25.2
 pytesseract==0.3.13
