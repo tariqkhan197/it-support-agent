@@ -14,11 +14,13 @@ import requests
 import streamlit as st
 
 # Streamlit Secrets, Environment Variable, aur Direct URL ka safe lookup
+# Streamlit Secrets, Environment Variable, aur Direct URL ka safe lookup
 API_BASE_URL = (
     st.secrets.get("API_BASE_URL")
     or st.secrets.get("BACKEND_URL")
     or os.environ.get("API_BASE_URL")
-    or "https://it-support-agent-cj6s.onrender.com"
+    or "https://it-support-agent-cj6s.onrender.com/api/v1"
+
 
 )
 _CSS_PATH = Path(__file__).parent / "assets" / "css" / "theme.css"
