@@ -166,3 +166,27 @@ async def root() -> dict:
         "health": "/health",
         "api_prefix": settings.API_PREFIX,
     }
+# Startup event par automatically admin user banaye ga
+@app.on_event("startup")
+def create_default_admin():
+    try:
+        from database import SessionLocal
+        from models.auth import User
+        from api.auth_utils import get_password_hash
+        
+        db = SessionLocal()
+        # Check karein ke admin user pehle se hai ya nahi
+        existing_admin = db.query(User).filter(User.username == "admin").first()
+        
+        if not existing_admin:
+            hashed_pwd = get_password_hash("admin123")
+            admin_user = User(username="admin", password_hash=hashed_pwd, role="admin")
+            db.add(admin_user)
+            db.commit()
+            print(">>> SUCCESS: Default admin user created (admin / admin123) <<<")
+        else:
+            print(">>> Admin user already exists <<<")
+            
+        db.close()
+    except Exception as e:
+        print(f">>> Could not create admin on startup: {e} <<<")
