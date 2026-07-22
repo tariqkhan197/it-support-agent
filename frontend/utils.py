@@ -18,7 +18,8 @@ API_BASE_URL = (
     st.secrets.get("API_BASE_URL")
     or st.secrets.get("BACKEND_URL")
     or os.environ.get("API_BASE_URL")
-    or "https://it-support-agent-cj6s.onrender.com/api/v1"
+    or "https://it-support-agent-cj6s.onrender.com"
+
 )
 _CSS_PATH = Path(__file__).parent / "assets" / "css" / "theme.css"
 
