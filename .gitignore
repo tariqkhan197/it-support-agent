@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+data/*.db
+data/uploads/*
+!data/uploads/.gitkeep
+data/vectorstore/*
+!data/vectorstore/.gitkeep
+logs/*.log
+!logs/.gitkeep
+.venv/
+*.egg-info/

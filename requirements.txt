@@ -1,0 +1,51 @@
+# ===== Core web framework =====
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+streamlit==1.41.1
+
+# ===== Data validation / settings =====
+pydantic==2.10.5
+pydantic-settings==2.7.1
+
+# ===== LLM orchestration =====
+langchain==0.3.14
+langchain-community==0.3.14
+langchain-groq==0.2.3
+langgraph==0.2.62
+groq==0.15.0
+
+# ===== Vector store & embeddings (RAG) =====
+chromadb==0.5.23
+sentence-transformers==3.3.1
+faiss-cpu==1.9.0.post1
+
+# ===== Document processing =====
+pymupdf==1.25.2
+pytesseract==0.3.13
+pillow==11.1.0
+
+# ===== Database =====
+sqlalchemy==2.0.37
+
+# ===== Auth / security =====
+bcrypt==4.2.1
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.20
+
+# ===== Charts / dashboard =====
+plotly==5.24.1
+pandas==2.2.3
+
+# ===== Utilities =====
+python-dotenv==1.0.1
+httpx==0.28.1
+requests==2.32.3
+tenacity==9.0.0
+
+# ===== Optional: local speech (uncomment if used) =====
+# openai-whisper==20240930
+# piper-tts==1.2.0
+
+# ===== Dev / testing =====
+pytest==8.3.4
+pytest-asyncio==0.25.2
