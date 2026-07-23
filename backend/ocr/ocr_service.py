@@ -1,15 +1,10 @@
 """
-OCR service (Tesseract via pytesseract).
-
-Extracts text from uploaded screenshots so error dialogs, BSOD stop codes,
-and error dialog text can be read and diagnosed automatically.
-Includes safe fallback for environments without Tesseract binary (e.g. Render Free Tier).
+OCR service using EasyOCR (Pure Python dependency - works natively on Render/Cloud).
 """
 
 from pathlib import Path
-
-import pytesseract
-from PIL import Image, UnidentifiedImageError
+import easyocr
+from PIL import Image
 
 from backend.config.settings import get_settings
 from backend.utils.exceptions import FileValidationError, OCRProcessingError
@@ -18,8 +13,12 @@ from backend.utils.logger import get_logger
 settings = get_settings()
 logger = get_logger(__name__)
 
-if hasattr(settings, "TESSERACT_CMD") and settings.TESSERACT_CMD:
-    pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
+# Initialize EasyOCR Reader once (English)
+try:
+    reader = easyocr.Reader(['en'], gpu=False)
+except Exception as exc:
+    logger.error("Failed to initialize EasyOCR reader: %s", exc)
+    reader = None
 
 
 def validate_image_upload(filename: str, file_size_bytes: int) -> None:
@@ -42,32 +41,22 @@ def validate_image_upload(filename: str, file_size_bytes: int) -> None:
 
 
 def extract_text_from_image(image_path: str | Path) -> str:
-    """
-    Run OCR on an image file and return the extracted text.
-    If Tesseract binary is missing on server, returns a safe fallback message
-    instead of crashing the request.
-    """
+    """Run EasyOCR on an image file and return the extracted text."""
     path = Path(image_path)
     if not path.exists():
         raise OCRProcessingError(f"Image file not found: {path}")
 
-    try:
-        image = Image.open(path)
-        image.load()
-    except (UnidentifiedImageError, OSError) as exc:
-        raise OCRProcessingError(f"'{path.name}' is not a valid, readable image file: {exc}") from exc
+    if reader is None:
+        return "OCR engine initialization failed on server."
 
     try:
-        # Grayscale conversion improves OCR accuracy
-        text = pytesseract.image_to_string(image.convert("L"))
-        cleaned = text.strip()
-        logger.info("OCR extracted %d characters from '%s'", len(cleaned), path.name)
-        return cleaned if cleaned else "[OCR Notice]: No text detected in image."
-    
-    except Exception as exc:  # Catch Tesseract missing / PATH error gracefully
-        logger.warning("Tesseract OCR unavailable on host (%s): %s", path.name, exc)
-        # Fallback text so downstream diagnosis pipeline continues safely
-        return (
-            "[OCR Notice]: Tesseract engine is not installed on this server environment. "
-            "Screenshot uploaded successfully and queued for standard AI diagnosis."
-        )
+        # EasyOCR extracts text directly from image path
+        results = reader.readtext(str(path), detail=0)
+        extracted_text = " ".join(results).strip()
+        
+        logger.info("EasyOCR extracted %d characters from '%s'", len(extracted_text), path.name)
+        return extracted_text if extracted_text else "No visible text found in screenshot."
+
+    except Exception as exc:
+        logger.error("EasyOCR processing error on '%s': %s", path.name, exc)
+        return f"Error extracting text from screenshot: {str(exc)}"
