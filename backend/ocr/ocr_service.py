@@ -1,8 +1,11 @@
 """
-Lightweight OCR service for resource-constrained environments (Render Free Tier 512MB RAM).
+Lightweight OCR service using PyTesseract for Render Free Tier (512MB RAM).
 """
 
 from pathlib import Path
+from PIL import Image
+import pytesseract
+
 from backend.config.settings import get_settings
 from backend.utils.exceptions import FileValidationError, OCRProcessingError
 from backend.utils.logger import get_logger
@@ -32,16 +35,24 @@ def validate_image_upload(filename: str, file_size_bytes: int) -> None:
 
 def extract_text_from_image(image_path: str | Path) -> str:
     """
-    Safely process screenshot path for AI analysis on memory-constrained servers.
+    Extract text from screenshot using PIL & PyTesseract (Zero Heavy Torch Memory).
     """
     path = Path(image_path)
     if not path.exists():
         raise OCRProcessingError(f"Image file not found: {path}")
 
-    logger.info("Screenshot received successfully: '%s'", path.name)
-    
-    return (
-        f"The user has uploaded a technical screenshot named '{path.name}'. "
-        "Server is operating in cloud-light mode. "
-        "Instruct the user nicely to copy-paste or type the error message, stop code, or log details shown in their screenshot so you can diagnose the exact issue immediately."
-    )
+    try:
+        logger.info("Extracting OCR text from screenshot: '%s'", path.name)
+        image = Image.open(path)
+        
+        # Extract real text from screenshot using PyTesseract
+        extracted_text = pytesseract.image_to_string(image).strip()
+
+        if not extracted_text:
+            return f"[Image uploaded: {path.name}]. No clear text could be automatically extracted from the screenshot."
+
+        return extracted_text
+
+    except Exception as e:
+        logger.error("PyTesseract OCR failed: %s", str(e))
+        return f"[Image uploaded: {path.name}]. Error reading image text."
