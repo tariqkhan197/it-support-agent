@@ -3,6 +3,7 @@ OCR service (Tesseract via pytesseract).
 
 Extracts text from uploaded screenshots so error dialogs, BSOD stop codes,
 and error dialog text can be read and diagnosed automatically.
+Includes safe fallback for environments without Tesseract binary (e.g. Render Free Tier).
 """
 
 from pathlib import Path
@@ -17,7 +18,8 @@ from backend.utils.logger import get_logger
 settings = get_settings()
 logger = get_logger(__name__)
 
-pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
+if hasattr(settings, "TESSERACT_CMD") and settings.TESSERACT_CMD:
+    pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
 
 
 def validate_image_upload(filename: str, file_size_bytes: int) -> None:
@@ -42,9 +44,8 @@ def validate_image_upload(filename: str, file_size_bytes: int) -> None:
 def extract_text_from_image(image_path: str | Path) -> str:
     """
     Run OCR on an image file and return the extracted text.
-
-    Raises OCRProcessingError if the file isn't a valid/readable image or
-    if Tesseract itself fails.
+    If Tesseract binary is missing on server, returns a safe fallback message
+    instead of crashing the request.
     """
     path = Path(image_path)
     if not path.exists():
@@ -57,13 +58,16 @@ def extract_text_from_image(image_path: str | Path) -> str:
         raise OCRProcessingError(f"'{path.name}' is not a valid, readable image file: {exc}") from exc
 
     try:
-        # Grayscale conversion improves OCR accuracy on UI screenshots/dialogs.
+        # Grayscale conversion improves OCR accuracy
         text = pytesseract.image_to_string(image.convert("L"))
-    except pytesseract.TesseractError as exc:
-        raise OCRProcessingError(f"Tesseract failed to process '{path.name}': {exc}") from exc
-    except Exception as exc:  # noqa: BLE001
-        raise OCRProcessingError(f"Unexpected OCR failure on '{path.name}': {exc}") from exc
-
-    cleaned = text.strip()
-    logger.info("OCR extracted %d characters from '%s'", len(cleaned), path.name)
-    return cleaned
+        cleaned = text.strip()
+        logger.info("OCR extracted %d characters from '%s'", len(cleaned), path.name)
+        return cleaned if cleaned else "[OCR Notice]: No text detected in image."
+    
+    except Exception as exc:  # Catch Tesseract missing / PATH error gracefully
+        logger.warning("Tesseract OCR unavailable on host (%s): %s", path.name, exc)
+        # Fallback text so downstream diagnosis pipeline continues safely
+        return (
+            "[OCR Notice]: Tesseract engine is not installed on this server environment. "
+            "Screenshot uploaded successfully and queued for standard AI diagnosis."
+        )

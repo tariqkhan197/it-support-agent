@@ -113,7 +113,7 @@ def require_admin_login() -> bool:
             response = requests.post(
                 f"{API_BASE_URL}/auth/login",
                 json={"username": username, "password": password},
-                timeout=10,
+                timeout=30,
             )
             if response.status_code == 200:
                 data = response.json()
