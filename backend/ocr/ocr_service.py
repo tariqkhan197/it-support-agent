@@ -32,7 +32,7 @@ def validate_image_upload(filename: str, file_size_bytes: int) -> None:
 
 def extract_text_from_image(image_path: str | Path) -> str:
     """
-    Safely process screenshot path for AI Vision analysis without loading heavy OCR binaries.
+    Safely process screenshot path for AI analysis on memory-constrained servers.
     """
     path = Path(image_path)
     if not path.exists():
@@ -40,5 +40,8 @@ def extract_text_from_image(image_path: str | Path) -> str:
 
     logger.info("Screenshot received successfully: '%s'", path.name)
     
-    # Clean string signal so AI Agent directly analyzes image visually
-    return f"[Uploaded Image: {path.name}] Analyzing screenshot directly using multimodal vision diagnostics."
+    return (
+        f"The user has uploaded a technical screenshot named '{path.name}'. "
+        "Server is operating in cloud-light mode. "
+        "Instruct the user nicely to copy-paste or type the error message, stop code, or log details shown in their screenshot so you can diagnose the exact issue immediately."
+    )
